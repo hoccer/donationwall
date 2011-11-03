@@ -1,0 +1,375 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-EN">
+	<head profile="http://gmpg.org/xfn/11">
+		<title>Donation Webapp</title>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<meta name="viewport" content="width=320, initial-scale=1.0, user-scalable=no" />
+		<meta http-equiv="content-type" content="application/xhtml+xml;charset=utf-8" />
+		<link type="text/css" rel="stylesheet" href="style.css" media="screen" />
+		
+		<link rel="apple-touch-startup-image" href="startup.png" />
+
+		<link rel="apple-touch-icon" href="icon57.png" />
+		<link rel="apple-touch-icon" sizes="114x114" href="icon114.png" />
+		
+    <script src="http://hoccer.com/webapp/lib/linccer/lib/json_parse.js" type="text/javascript" charset="utf-8"></script>
+    <script src="http://hoccer.com/webapp/lib/linccer/lib/base.js" type="text/javascript" charset="utf-8"></script>
+    <script src="http://hoccer.com/webclient/lib/linccer/lib/linccer.js" type="text/javascript" charset="utf-8"></script>
+    
+		<script language="javascript" type="text/javascript">
+		function limitText(limitField, limitCount, limitNum) {
+		if (limitField.value.length > limitNum) {
+			limitField.value = limitField.value.substring(0, limitNum);
+		} else {
+			limitCount.value = limitNum - limitField.value.length;
+			}
+		}
+	</script>
+ <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=true"></script>	   
+ <script type="text/javascript">
+      var map;
+      var geocoder;
+      var locationField;
+      var data = "";
+      var linccer;
+	  var payload;
+	  var positionSet = 0;
+	  var sending = 0;
+	  var retrycounter = 0;
+
+      function initialize() {
+      console.log('initializing');
+		geocoder = new google.maps.Geocoder();
+		
+ 
+
+		locationField = document.getElementById('location');
+		locationSearch.style.display = "none";
+        var myOptions = {
+          zoom: 6,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        map = new google.maps.Map(document.getElementById('map_canvas'),
+            myOptions);
+        // Try HTML5 geolocation
+        if(navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            var pos = new google.maps.LatLng(position.coords.latitude,
+                                             position.coords.longitude);
+			linccer = Linccer( {"api_key" : "328cb5c0736f012e868000163e001ab0", "server" : "experimental" });
+      
+     	linccer.on('sent', function(){
+     		sending = 0;
+      		window.location = "http://hoccer.com/paypal/done.html"
+		});
+		
+		linccer.on('error', function(data){
+			if(data.message == 'request_timeout' && retrycounter < 3){
+				alert('Your donation was processed by Paypal but was not sent to a donation wall, let me try this again.');
+				hoccDonation();
+				retrycounter = retrycounter + 1;
+			}
+			if(retrycounter == 3){
+				alert('There was a problem sending your donation to the donation wall. Sorry for that.');
+				retrycounter = 0;
+				window.location = "http://hoccer.com/paypal/error.html"
+				var div1 = document.getElementById('activity');
+				div1.style.display = 'none';
+			}
+			sending = 0;
+		});
+		
+            linccer.setEnvironmentCoordinates(position.coords.latitude,position.coords.longitude, 2000);
+            codeLatLng(position.coords.latitude,position.coords.longitude);
+		 	map.setCenter(pos);
+		 	positionSet = 1;
+
+          }, function() {
+            handleNoGeolocation(true);
+          });
+        } else {
+          // Browser doesn't support Geolocation
+          handleNoGeolocation(false);
+        }
+      }
+      
+
+
+      function handleNoGeolocation(errorFlag) {
+        if (errorFlag) {
+          console.log('Error: The Geolocation service failed.');
+          locationField.value = 'Could not locate you, please enter address';
+          locationSearch.style.display = 'block';
+        } else {
+          console.log('Error: Your browser doesn\'t support geolocation.');
+          locationField.value = 'Could not locate you, please enter address';
+          locationSearch.style.display = 'none';
+        }
+
+        var options = {
+          map: map,
+          position: new google.maps.LatLng(37.783142, -122.403225),
+        };
+
+        map.setCenter(options.position);
+      }
+	
+	function codeLatLng(thelat,thelong) {
+    var latlng = new google.maps.LatLng(thelat, thelong);
+    if (geocoder) {
+      geocoder.geocode({'latLng': latlng}, function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+          if (results[0]) {
+ 			locationField.value = (results[0].formatted_address);
+          }
+        } else {
+          alert("Geocoder failed due to: " + status);
+        }
+       });
+     }
+   }
+   
+   
+   
+   function codeAddress() {
+    var address = document.getElementById("addressSearch").value;
+    if (geocoder) {
+      geocoder.geocode( { 'address': address}, function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+          map.setCenter(results[0].geometry.location);
+          
+          var marker = new google.maps.Marker({
+              map: map, 
+              position: results[0].geometry.location
+          });
+          var found = results[0].geometry.location;
+          console.log(found.Ma);
+          console.log(found.Na);
+          linccer = Linccer( {"api_key" : "328cb5c0736f012e868000163e001ab0", "server" : "experimental" });
+      
+     	linccer.on('sent', function(){
+     		sending = 0;
+      		window.location = "http://hoccer.com/paypal/done.html"
+		});
+		
+		linccer.on('error', function(data){
+			if(data.message == 'request_timeout' && retrycounter < 3){
+				alert('Your donation was processed by Paypal but was not sent to a donation wall, let me try this again.');
+				hoccDonation();
+				retrycounter = retrycounter + 1;
+			}
+			if(retrycounter == 3){
+				alert('There was a problem sending your donation to the donation wall. Sorry for that.');
+				retrycounter = 0;
+				window.location = "http://hoccer.com/paypal/error.html"
+				var div1 = document.getElementById('activity');
+				div1.style.display = 'none';
+			}
+			sending = 0;
+		});
+            linccer.setEnvironmentCoordinates(found.Ma,found.Na, 2000);
+            codeLatLng(found.Ma,found.Na);
+        	locationSearch.style.display = "none";
+        	positionSet = 1;
+        } else {
+          alert("Geocode was not successful for the following reason: " + status);
+        }
+      });
+    }
+  }
+  
+	function hoccDonation() {
+		var nameField = document.getElementById('name');
+		var commentField = document.getElementById('comment');
+		var amountField = document.getElementById('value');
+		var emailField = document.getElementById('email');
+		if (positionSet) {
+			if (nameField.value && emailField.value) {
+				var div1 = document.getElementById('activity')
+				div1.style.display = 'block';
+				var donJSON = '{"type":"ppdon","content":{"name":"' + nameField.value + '","comment":"' + commentField.value + '","amount":"' + amountField.value +'"}}';
+				data = JSON.parse(donJSON);
+				payload = { 'client' : 'PPClient', 'data': [ data ] };
+				linccer.setName(data.content.name);
+    			linccer.send("one-to-many", payload);
+    		}
+    		else {
+    			alert('Please fill in your credentials');
+    		}
+		}
+		else {
+			alert('There was a problem location you, please set your location manually');
+		}
+	}
+
+	function sendDonation() {
+
+		var nameField = document.getElementById('name');
+		var commentField = document.getElementById('comment');
+		var amountField = document.getElementById('value');
+		var emailField = document.getElementById('email');
+		var http = new XMLHttpRequest();
+		
+		if (sending != 1) {
+			if (positionSet) {
+				if (nameField.value && emailField.value) {
+				sending = 1;
+				var div1 = document.getElementById('activity')
+				div1.style.display = 'block';
+				var url = "http://hoccer.com/paypal/backend/send_invoice.php";
+				var params = "name=" + nameField.value + "&email=" + emailField.value + "&amount=" + amountField.value + "&comment=" + commentField.value;
+				http.open("POST", url, true);
+
+				//Send the proper header information along with the request
+				http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+				http.onreadystatechange = function() {//Call a function when the state changes.
+					if(http.readyState == 4 && http.status == 200) {
+							var response = JSON.parse(http.responseText);
+							if (response.responseEnvelope.ack == 'Success'){
+								hoccDonation();
+							}
+							else {
+								alert('There was an error processing the invoice, please make shure you entered a valid email address');
+								var div1 = document.getElementById('activity');
+								div1.style.display = 'none';
+							}
+					}
+				}
+				http.send(params);
+				}
+				else {
+					sending = 0;
+					alert('Please fill in your credentials');
+				}
+			}
+			else {
+				sending = 0;
+				alert('There was a problem location you, please set your location manually');
+			}	
+		}
+  }
+  
+  function toogleMap(){
+  	var div1 = document.getElementById('locationSearch')
+	if (div1.style.display == 'none') {
+		div1.style.display = 'block';
+		  var options = {
+          map: map,
+          position: new google.maps.LatLng(37.783142, -122.403225),
+        };
+
+        map.setCenter(options.position);
+	} else {
+		div1.style.display = 'none'
+	}
+  }
+  
+function toogleActivityLayer(){
+  	var div1 = document.getElementById('activity')
+	if (div1.style.display == 'none') {
+		console.log('on');
+		div1.style.display = 'block';
+	} else {
+		console.log('off');
+		div1.style.display = 'none'
+	}
+  }
+  
+ 
+  function onlyNumbers(evt)
+{
+	var e = event || evt; // for trans-browser compatibility
+	var charCode = e.which || e.keyCode;
+
+	if (charCode > 31 && (charCode < 48 || charCode > 57))
+		return false;
+
+	return true;
+
+}
+
+    if (typeof window.DeviceMotionEvent != 'undefined') {
+    // Shake sensitivity (a lower number is more)
+    var sensitivity = 20;
+
+    // Position variables
+    var x1 = 0, y1 = 0, z1 = 0, x2 = 0, y2 = 0, z2 = 0;
+
+    // Listen to motion events and update the position
+    window.addEventListener('devicemotion', function (e) {
+        x1 = e.accelerationIncludingGravity.x;
+        y1 = e.accelerationIncludingGravity.y;
+        z1 = e.accelerationIncludingGravity.z;
+        e.preventDefault();
+    }, false);
+
+    // Periodically check the position and fire
+    // if the change is greater than the sensitivity
+    setInterval(function () {
+        var change = Math.abs(x1-x2+y1-y2+z1-z2);
+
+        if (change > sensitivity) {
+            sendDonation();
+        }
+
+        // Update new position
+        x2 = x1;
+        y2 = y1;
+        z2 = z1;
+    }, 150);
+	}
+
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+	</head>
+	<body>
+		<div id="wrapper">
+			<div id="activity">
+			<div id="activityIndicator">
+						<div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+							<div class="blade"></div>
+						</div>
+					</div>
+			<span id="process">Processing...</span>
+			</div>
+		 	<header id="header">
+		 		<img class="right" src="cancer_logo.png" alt="Hoccer" width="120" height="42" />
+		 	</header>
+		 	<section id="main">
+				<span class=bold><p>Throw a Crucial Catch</p></span>
+				<img class="right" src="info_throw.png" alt="throw" width="80" height="80"/>
+		 		<p>Donate 1$ to American Cancer Society. Enter your credentials and make a throw gesture or tap the button.</p>
+		 	</section>
+		 	<div id="formular">
+		 		<input readonly id="location" type="text" name="location" value="Getting location..." onClick="toogleMap();">
+		 		<div id="locationSearch">
+		 		<div id="map_canvas"></div>
+		 		<input id="addressSearch" type="text"/>
+		 		<input type="button" value="Search" onclick="codeAddress()">
+		 		</div>
+		 		<input id="name" name="personname" class="" type="text" value=""></input>
+		 		<input id="email" name="email" class="" type="text" value=""></input>
+		 		<textarea id="comment" name="item_name" onKeyDown="limitText(comment,countdown,140);" onKeyUp="limitText(comment,countdown,140);"></textarea>
+				<span class="small right">You have <input readonly type="text" id="countdown" name="countdown" value="140"> characters left.</span>
+		 		<input id="value" name="amount" class="left" type="text" value="1" onkeypress="return onlyNumbers();"></input>
+			<input class="right" style="postion:relative;margin:0 0 0;" type="image" name="submit" src="pp_button_small.png" width="130" height="41" onclick="sendDonation();"/>
+		 	</div>
+		 	<footer id="footer">
+		 		<span class="left hoccer"><img src="logo_hoccer.png" alt="Hoccer" width="80" height="19"/></span>
+		 	</footer>
+		 </div>
+	</body>
+</html>
